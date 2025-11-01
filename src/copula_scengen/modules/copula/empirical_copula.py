@@ -43,6 +43,10 @@ class EmpiricalCopula(BaseModel):
             msg = f"Each argument must have dimension {self.data.shape[1]}, got {d}"
             raise ValueError(msg)
 
+        if len(args.shape) != 2:  # noqa: PLR2004
+            msg = "Arguments must be a 2D array"
+            raise ValueError(msg)
+
         if not np.isfinite(args).all():
             msg = "Arguments contain NaN or infinite values"
             raise ValueError(msg)

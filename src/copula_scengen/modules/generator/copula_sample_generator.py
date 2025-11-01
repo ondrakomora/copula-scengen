@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, model_validator
 from copula_scengen.modules.copula.copula_sample import CopulaSample
 from copula_scengen.modules.copula.copula_sample2d import CopulaSample2D
 from copula_scengen.modules.copula.empirical_copula import EmpiricalCopula
+from copula_scengen.modules.core.random_generator import random_generator
 from copula_scengen.modules.generator.deviation_cache import DeviationCache
 from copula_scengen.modules.utils.margin_type import is_discrete
 
@@ -16,11 +17,10 @@ class CopulaSampleGenerator(BaseModel):
 
     @model_validator(mode="after")
     def _transform_discrete_margins(self) -> "CopulaSampleGenerator":
-        # comment: mutate discrete margins by subtracting random U(0,1)
         transformed = self.data.copy()
         for col in transformed.columns:
             if is_discrete(transformed[col]):
-                transformed[col] = transformed[col] - np.random.default_rng(42).random(len(transformed))
+                transformed[col] = transformed[col] - random_generator.random(len(transformed))
         self.data = transformed
         return self
 
@@ -62,9 +62,7 @@ class CopulaSampleGenerator(BaseModel):
                     copula_sample.retrieve_scenarios(scenario_idxs=available_scenarios),
                     strict=False,
                 ),
-                key=lambda item: sum(
-                    deviation_cache.evaluate(margin=margin, rank=item[1][margin]) for margin in range(margin)
-                ),
+                key=lambda item: sum(deviation_cache(margin=margin, rank=item[1][margin]) for margin in range(margin)),
             )
 
             available_scenarios.remove(best_idx)

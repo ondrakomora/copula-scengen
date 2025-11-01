@@ -17,10 +17,10 @@ def generate_binary_dataset(n_samples: int = 10, n_features: int = 3) -> pd.Data
 
 
 if __name__ == "__main__":
-    data = generate_binary_dataset(n_samples=1000, n_features=40)
+    data = generate_binary_dataset(n_samples=1000, n_features=100)
 
     start = time.perf_counter()
-    copula_sample = CopulaSampleGenerator(data=data).generate(n_scenarios=10)
+    copula_sample = CopulaSampleGenerator(data=data).generate(n_scenarios=50)
     logger.info(f"Copula sample generation took {time.perf_counter() - start:.3f}s")
 
     start = time.perf_counter()
