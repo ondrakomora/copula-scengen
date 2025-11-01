@@ -1,7 +1,3 @@
-[build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "copula-scengen"
 license = "MIT"
@@ -14,25 +10,38 @@ authors = [
 ]
 
 dependencies = [
-    "pydantic==2.9.0",
-    "loguru==0.7.3",
-    "pandas==2.3.3",
+    "pydantic>=2.9.0",
+    "loguru>=0.7.3",
+    "pandas>=2.3.3",
+    "statsmodels>=0.14.5"
 ]
 
 [dependency-groups]
 dev = [
     "ruff==0.14.1",
-    "pytest==8.4.2"
+    "pytest==8.4.2",
 ]
+
+[project.urls]
+Homepage = "https://github.com/ondrakomora/copula-scengen"
+Issues = "https://github.com/ondrakomora/copula-scengen/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/copula_scengen"]
+
+[tool.hatch.version]
+source = "tag"
 
 [tool.ruff]
 line-length = 120
-target-version = "py310" # the python version to target, useful when considering code upgrades, defaults to "py310"
-# Allow imports relative to the "app" directory
+target-version = "py310" 
 src = [".", "src"]
 show-fixes = true
 unsafe-fixes = true
-
 
 [tool.mypy]
 plugins = ["pydantic.mypy"]
@@ -65,4 +74,15 @@ ignore = [
     "ISC001",
     "TD002",  # Missing author in TODO
     "TD003",  # Missing issue link on the line following this TODO
+]
+
+[tool.ruff.per-file-ignores]
+"tests/**/*.py" = [
+    # at least this three should be fine in tests:
+    "S101", # asserts allowed in tests...
+    "ARG", # Unused function args -> fixtures nevertheless are functionally relevant...
+    "FBT", # Don't care about booleans as positional arguments in tests, e.g. via @pytest.mark.parametrize()
+    # The below are debateable
+    "PLR2004", # Magic value used in comparison, ...
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
 ]

@@ -1,17 +1,28 @@
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from copula_scengen.modules.copula.copula_sample import CopulaSample
 from copula_scengen.modules.copula.copula_sample2d import CopulaSample2D
-from copula_scengen.modules.copula.empirical_extension_copula2d import EmpiricalExtensionCopula2D
+from copula_scengen.modules.copula.empirical_copula import EmpiricalCopula
 from copula_scengen.modules.generator.deviation_cache import DeviationCache
+from copula_scengen.modules.utils.margin_type import is_discrete
 
 
 class CopulaSampleGenerator(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     data: pd.DataFrame
+
+    @model_validator(mode="after")
+    def _transform_discrete_margins(self) -> "CopulaSampleGenerator":
+        # comment: mutate discrete margins by subtracting random U(0,1)
+        transformed = self.data.copy()
+        for col in transformed.columns:
+            if is_discrete(transformed[col]):
+                transformed[col] = transformed[col] - np.random.default_rng(42).random(len(transformed))
+        self.data = transformed
+        return self
 
     def generate(self, n_scenarios: int) -> CopulaSample:
         copula_sample = CopulaSample.initialize(max_rank=n_scenarios)
@@ -33,8 +44,7 @@ class CopulaSampleGenerator(BaseModel):
 
         copula_samples_2d = [CopulaSample2D.initialize(n_scenarios) for i in range(margin)]
         target_copulas = [
-            EmpiricalExtensionCopula2D(data=self.data.iloc[:, [prior_margin, margin]].values)
-            for prior_margin in range(margin)
+            EmpiricalCopula(data=self.data.iloc[:, [prior_margin, margin]].values) for prior_margin in range(margin)
         ]
 
         new_ranks_to_assign = np.zeros_like(available_scenarios)

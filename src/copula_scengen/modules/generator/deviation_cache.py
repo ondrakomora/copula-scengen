@@ -4,7 +4,7 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, PrivateAttr
 
 from copula_scengen.modules.copula.copula_sample2d import CopulaSample2D
-from copula_scengen.modules.copula.empirical_extension_copula2d import EmpiricalExtensionCopula2D
+from copula_scengen.modules.copula.empirical_copula import EmpiricalCopula
 
 
 class DeviationCache(BaseModel):
@@ -16,7 +16,7 @@ class DeviationCache(BaseModel):
     def compute_cache(
         cls,
         copula_samples: list[CopulaSample2D],
-        target_copulas: list[EmpiricalExtensionCopula2D],
+        target_copulas: list[EmpiricalCopula],
         rank: int,
     ) -> "DeviationCache":
         max_rank = copula_samples[0].max_rank
@@ -28,16 +28,16 @@ class DeviationCache(BaseModel):
             target_copula = target_copulas[margin]
             delta = sum(
                 fabs(
-                    copula_sample.evaluate(arg=i)
+                    copula_sample(arg=i)
                     + 1.0 / max_rank
-                    - target_copula.evaluate(u=i / max_rank, v=rank / max_rank)
+                    - target_copula(args=np.array([i / max_rank, rank / max_rank]))
                 )
                 for i in range(1, max_rank + 1)
             )
 
             for i in range(1, max_rank + 1):
-                copula_sample_eval = copula_sample.evaluate(i - 1)
-                target_copula_eval = target_copula.evaluate(u=(i - 1) / max_rank, v=rank / max_rank)
+                copula_sample_eval = copula_sample(i - 1)
+                target_copula_eval = target_copula(args=np.array([(i - 1) / max_rank, rank / max_rank]))
                 delta += fabs(copula_sample_eval - target_copula_eval) - fabs(
                     copula_sample_eval + 1.0 / max_rank - target_copula_eval
                 )

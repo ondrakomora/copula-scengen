@@ -1,30 +1,31 @@
+from functools import lru_cache
+
 import numpy as np
-from pydantic import BaseModel, ConfigDict, computed_field
 
-from copula_scengen.modules.utils.cdf import get_cdf
+from copula_scengen.modules.utils.cdf_steps import cdf_steps
+from copula_scengen.modules.utils.sorted import sorted_array
 
 
-class StepFunction(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+def step_function(data: np.ndarray, arg: float) -> tuple[float, float]:
+    return _step_function(sorted_array(data), arg)
 
-    data: np.ndarray
 
-    @computed_field
-    @property
-    def cdf(self) -> np.ndarray:
-        return get_cdf(self.data)
+@lru_cache
+def _step_function(sorted_data: tuple[float, ...], arg: float) -> tuple[float, float]:
+    if not 0 <= arg <= 1:
+        msg = "Argument must be in interval [0,1]"
+        raise ValueError(msg)
 
-    def evaluate(self, val: float) -> tuple[float, float]:
-        if val < 0 or val > 1:
-            msg = "Argument must be in interval [0,1]"
-            raise ValueError(msg)
+    if len(sorted_data) == 0:
+        msg = "Cannot compute step function on empty data."
+        raise ValueError(msg)
 
-        idx = np.searchsorted(self.cdf, val)
+    cdf = cdf_steps(sorted_data)
+    idx = int(np.searchsorted(cdf, arg))
 
-        # Exact match
-        if idx < len(self.cdf) and self.cdf[idx] == val:
-            return val, val
+    if idx < len(cdf) and cdf[idx] == arg:
+        return arg, arg
 
-        lower = self.cdf[idx - 1] if idx > 0 else 0
-        upper = self.cdf[idx] if idx < len(self.cdf) else 1
-        return lower, upper
+    lower = cdf[idx - 1] if idx > 0 else 0.0
+    upper = cdf[idx] if idx < len(cdf) else 1.0
+    return float(lower), float(upper)

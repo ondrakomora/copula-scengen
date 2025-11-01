@@ -1,13 +1,11 @@
-from math import ceil
-
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, computed_field
+from statsmodels.distributions.empirical_distribution import ECDF
 
 from copula_scengen.modules.copula.copula_sample import CopulaSample
-from copula_scengen.modules.functions.empirical_distribution_function import EmpiricalDistributionFunction
-from copula_scengen.modules.functions.extended_empirical_quantile_function import ExtendedEmpiricalQuantileFunction
-from copula_scengen.modules.functions.uniform_distribution_function import uniform_distribution_function
+from copula_scengen.modules.functions.inverse_ecdf import inverse_ecdf
+from copula_scengen.modules.functions.lower_transformation_bound import lower_transformation_bound
 from copula_scengen.modules.utils.margin_type import is_discrete
 
 
@@ -23,25 +21,15 @@ class CopulaSampleTransformer(BaseModel):
         return self.copula_sample.max_rank
 
     def transform_discrete_variable(self, data: np.ndarray, rank: int) -> int:
-        edf = EmpiricalDistributionFunction(data=data)
-
-        extended_eqf = ExtendedEmpiricalQuantileFunction(data=data)
-
         u1 = (rank - 1) / self.n_scenarios
         u2 = rank / self.n_scenarios
 
-        left_bound = extended_eqf.evaluate(u1)
-        right_bound = extended_eqf.evaluate(u2)
+        lower_bound = int(lower_transformation_bound(data=data, arg=u1))
+        upper_bound = int(inverse_ecdf(data=data, arg=u2))
 
-        n1 = max(0, ceil(left_bound))
-        n2 = max(0, ceil(right_bound))
+        ecdf = ECDF(data)
 
-        def score(x: int) -> float:
-            return (edf.cdf(x) - edf.cdf(x - 1)) * (
-                uniform_distribution_function(right_bound + 1 - x) - uniform_distribution_function(left_bound + 1 - x)
-            )
-
-        return max(range(n1, n2 + 1), key=score)
+        return max(range(lower_bound, upper_bound + 1), key=lambda x: ecdf(x) - ecdf(x - 1))
 
     def transform_continuous_variable(
         self,
@@ -49,14 +37,12 @@ class CopulaSampleTransformer(BaseModel):
         rank: int,
         offset: float = 0.0,
     ) -> float:
-        edf = EmpiricalDistributionFunction(data=data)
-
-        return edf.icdf((rank - 0.5) / self.n_scenarios) + offset
+        return inverse_ecdf(data=data, p=(rank - 0.5) / self.n_scenarios) + offset
 
     def _calculate_offset(self, data: np.ndarray) -> float:
-        edf = EmpiricalDistributionFunction(data=data)
         computed_mean = (
-            sum(edf.icdf(rank / self.n_scenarios) for rank in range(1, self.n_scenarios + 1)) / self.n_scenarios
+            sum(inverse_ecdf(data=data, p=(rank - 0.5) / self.n_scenarios) for rank in range(1, self.n_scenarios + 1))
+            / self.n_scenarios
         )
         return data.mean() - computed_mean
 

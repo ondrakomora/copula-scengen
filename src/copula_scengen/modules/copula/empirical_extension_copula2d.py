@@ -2,7 +2,7 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, computed_field, field_validator
 
 from copula_scengen.modules.copula.empirical_copula import EmpiricalCopula
-from copula_scengen.modules.functions.step_function import StepFunction
+from copula_scengen.modules.functions.step_function import step_function
 from copula_scengen.modules.utils.margin_type import is_discrete
 from copula_scengen.schemas.margin_type import MarginType
 
@@ -78,39 +78,39 @@ class EmpiricalExtensionCopula2D(BaseModel):
         multiplier_upper = (val - val_lower) / length
         return multiplier_lower, multiplier_upper
 
-    def evaluate(self, u: float, v: float) -> float:
+    def __call__(self, u: float, v: float) -> float:
         match (self.first_margin_type, self.second_margin_type):
             case (MarginType.CONTINUOUS, MarginType.CONTINUOUS):
-                return self.empirical_copula.evaluate(np.array([u, v]))
+                return self.empirical_copula(np.array([u, v]))
             case (MarginType.CONTINUOUS, MarginType.DISCRETE):
-                v_lower, v_upper = StepFunction(data=self.data[1]).evaluate(v)
+                v_lower, v_upper = step_function(data=self.data[1], arg=v)
                 v_lower_multiplier, v_upper_multiplier = self._get_multipliers(v, v_lower, v_upper)
 
-                empirical_copula_lower = self.empirical_copula.evaluate(np.array([u, v_lower]))
-                empirical_copula_upper = self.empirical_copula.evaluate(np.array([u, v_upper]))
+                empirical_copula_lower = self.empirical_copula(np.array([u, v_lower]))
+                empirical_copula_upper = self.empirical_copula(np.array([u, v_upper]))
 
                 return v_lower_multiplier * empirical_copula_lower + v_upper_multiplier * empirical_copula_upper
 
             case (MarginType.DISCRETE, MarginType.CONTINUOUS):
-                u_lower, u_upper = StepFunction(data=self.data[0]).evaluate(u)
+                u_lower, u_upper = step_function(data=self.data[0], arg=u)
                 u_lower_multiplier, u_upper_multiplier = self._get_multipliers(u, u_lower, u_upper)
 
-                empirical_copula_lower = self.empirical_copula.evaluate(np.array([u_lower, v]))
-                empirical_copula_upper = self.empirical_copula.evaluate(np.array([u_upper, v]))
+                empirical_copula_lower = self.empirical_copula(np.array([u_lower, v]))
+                empirical_copula_upper = self.empirical_copula(np.array([u_upper, v]))
 
                 return u_lower_multiplier * empirical_copula_lower + u_upper_multiplier * empirical_copula_upper
 
             case (MarginType.DISCRETE, MarginType.DISCRETE):
-                u_lower, u_upper = StepFunction(data=self.data[0]).evaluate(u)
+                u_lower, u_upper = step_function(data=self.data[0], arg=u)
                 u_lower_multiplier, u_upper_multiplier = self._get_multipliers(u, u_lower, u_upper)
 
-                v_lower, v_upper = StepFunction(data=self.data[1]).evaluate(v)
+                v_lower, v_upper = step_function(data=self.data[1], arg=v)
                 v_lower_multiplier, v_upper_multiplier = self._get_multipliers(v, v_lower, v_upper)
 
-                empirical_copula_ll = self.empirical_copula.evaluate(np.array([u_lower, v_lower]))
-                empirical_copula_lu = self.empirical_copula.evaluate(np.array([u_lower, v_upper]))
-                empirical_copula_ul = self.empirical_copula.evaluate(np.array([u_upper, v_lower]))
-                empirical_copula_uu = self.empirical_copula.evaluate(np.array([u_upper, v_lower]))
+                empirical_copula_ll = self.empirical_copula(np.array([u_lower, v_lower]))
+                empirical_copula_lu = self.empirical_copula(np.array([u_lower, v_upper]))
+                empirical_copula_ul = self.empirical_copula(np.array([u_upper, v_lower]))
+                empirical_copula_uu = self.empirical_copula(np.array([u_upper, v_lower]))
 
                 return (
                     u_lower_multiplier * v_lower_multiplier * empirical_copula_ll
