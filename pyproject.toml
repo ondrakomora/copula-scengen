@@ -1,7 +1,7 @@
 [project]
 name = "copula-scengen"
 license = "MIT"
-version = "0.1.0"
+version = "0.2.0"
 description = "Package implementing a scenario generation method based on copulas"
 readme = "README.md"
 requires-python = ">=3.10"
