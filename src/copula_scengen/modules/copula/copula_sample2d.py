@@ -18,11 +18,5 @@ class CopulaSample2D(BaseModel):
         arr = np.asarray(arg) - 1
         return self._cache[arr]
 
-    def assign(self, rank: int) -> "CopulaSample2D":
-        new_obj = CopulaSample2D(max_rank=self.max_rank)
-        new_cache = self._cache.copy()
-
-        new_cache[rank - 1 :] += 1.0 / self.max_rank
-
-        new_obj._cache = new_cache
-        return new_obj
+    def assign(self, rank: int) -> None:
+        self._cache[rank - 1 :] += 1.0 / self.max_rank

@@ -47,5 +47,5 @@ class DeviationCache(BaseModel):
         instance._cache_matrix = cache_matrix
         return instance
 
-    def __call__(self, margin: int, rank: int) -> float:
-        return self._cache_matrix[margin, rank - 1]
+    def __call__(self, ranks: np.ndarray) -> np.ndarray:
+        return np.take_along_axis(self._cache_matrix.T, ranks - 1, axis=0)

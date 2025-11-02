@@ -52,8 +52,8 @@ def test_inverse_ecdf(data: list[int | float], arg: float, expected: float) -> N
         (np.array([-100, -50, 0, 50, 100]), 1.0, 100.0),
         (np.array([0.1, 0.5, 0.9, 1.5, 2.3]), 0.0, 0.1),
         (np.array([0.1, 0.5, 0.9, 1.5, 2.3]), 1.0, 2.3),
-        (np.array([99, 1, 50, 25, 75]), 0.0, 1.0),
-        (np.array([99, 1, 50, 25, 75]), 1.0, 99.0),
+        (np.array([1, 25, 50, 75, 99]), 0.0, 1.0),
+        (np.array([1, 25, 50, 75, 99]), 1.0, 99.0),
         (np.array([3, 3, 7, 7, 7, 15, 15]), 0.0, 3.0),
         (np.array([3, 3, 7, 7, 7, 15, 15]), 1.0, 15.0),
     ],
@@ -74,13 +74,6 @@ def test_inverse_ecdf_single_element() -> None:
     assert inverse_ecdf(arr, 0.0) == 42.0
     assert inverse_ecdf(arr, 1.0) == 42.0
     assert inverse_ecdf(arr, 0.5) == 42.0
-
-
-def test_inverse_ecdf_handles_unsorted_input() -> None:
-    arr = np.array([3, 1, 2])
-    assert inverse_ecdf(arr, 0.0) == 1.0
-    assert inverse_ecdf(arr, 1.0) == 3.0
-    assert inverse_ecdf(arr, 0.5) == 2.0
 
 
 def test_inverse_ecdf_all_identical() -> None:

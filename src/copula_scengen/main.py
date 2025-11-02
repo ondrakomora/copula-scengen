@@ -20,11 +20,11 @@ if __name__ == "__main__":
     data = generate_binary_dataset(n_samples=1000, n_features=100)
 
     start = time.perf_counter()
-    copula_sample = CopulaSampleGenerator(data=data).generate(n_scenarios=50)
+    copula_sample = CopulaSampleGenerator(data=data).generate(n_scenarios=20)
     logger.info(f"Copula sample generation took {time.perf_counter() - start:.3f}s")
 
     start = time.perf_counter()
-    scenarios = CopulaSampleTransformer(data=data, copula_sample=copula_sample).transform()
+    scenarios = CopulaSampleTransformer(data=data).transform(copula_sample=copula_sample)
     logger.info(f"Scenario transformation took {time.perf_counter() - start:.3f}s")
 
     logger.debug(copula_sample)
