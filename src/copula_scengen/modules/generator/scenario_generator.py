@@ -18,4 +18,4 @@ class ScenarioGenerator(BaseModel):
 
     def generate(self, n_scenarios: int) -> pd.DataFrame:
         copula_sample = CopulaSampleGenerator(data=self.data).generate(n_scenarios=n_scenarios)
-        return CopulaSampleTransformer(data=self.data, copula_sample=copula_sample).transform()
+        return CopulaSampleTransformer(data=self.data).transform(copula_sample=copula_sample)

@@ -1,82 +1,70 @@
-from math import ceil
-
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, computed_field
 
 from copula_scengen.modules.copula.copula_sample import CopulaSample
-from copula_scengen.modules.functions.empirical_distribution_function import EmpiricalDistributionFunction
-from copula_scengen.modules.functions.extended_empirical_quantile_function import ExtendedEmpiricalQuantileFunction
-from copula_scengen.modules.functions.uniform_distribution_function import uniform_distribution_function
+from copula_scengen.modules.functions.discrete_transformation_bounds import discrete_transformation_bounds
+from copula_scengen.modules.functions.inverse_ecdf import inverse_ecdf
 from copula_scengen.modules.utils.margin_type import is_discrete
+from copula_scengen.schemas.margin_type import MarginType
 
 
 class CopulaSampleTransformer(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     data: pd.DataFrame
-    copula_sample: CopulaSample
 
     @computed_field
     @property
-    def n_scenarios(self) -> int:
-        return self.copula_sample.max_rank
+    def margin_types(self) -> dict[int, MarginType]:
+        margin_types = {}
+        for margin_index in range(self.data.shape[1]):
+            margin_data = self.data.iloc[:, margin_index].to_numpy()
+            if is_discrete(margin_data):
+                margin_types[margin_index] = MarginType.DISCRETE
+            else:
+                margin_types[margin_index] = MarginType.CONTINUOUS
+        return margin_types
 
-    def transform_discrete_variable(self, data: np.ndarray, rank: int) -> int:
-        edf = EmpiricalDistributionFunction(data=data)
+    def _compute_transformations(self, n_scenarios: int) -> None:
+        margin_transformations = np.zeros((self.data.shape[1], n_scenarios), dtype=float)
 
-        extended_eqf = ExtendedEmpiricalQuantileFunction(data=data)
-
-        u1 = (rank - 1) / self.n_scenarios
-        u2 = rank / self.n_scenarios
-
-        left_bound = extended_eqf.evaluate(u1)
-        right_bound = extended_eqf.evaluate(u2)
-
-        n1 = max(0, ceil(left_bound))
-        n2 = max(0, ceil(right_bound))
-
-        def score(x: int) -> float:
-            return (edf.cdf(x) - edf.cdf(x - 1)) * (
-                uniform_distribution_function(right_bound + 1 - x) - uniform_distribution_function(left_bound + 1 - x)
-            )
-
-        return max(range(n1, n2 + 1), key=score)
-
-    def transform_continuous_variable(
-        self,
-        data: np.ndarray,
-        rank: int,
-        offset: float = 0.0,
-    ) -> float:
-        edf = EmpiricalDistributionFunction(data=data)
-
-        return edf.icdf((rank - 0.5) / self.n_scenarios) + offset
-
-    def _calculate_offset(self, data: np.ndarray) -> float:
-        edf = EmpiricalDistributionFunction(data=data)
-        computed_mean = (
-            sum(edf.icdf(rank / self.n_scenarios) for rank in range(1, self.n_scenarios + 1)) / self.n_scenarios
-        )
-        return data.mean() - computed_mean
-
-    def transform(self) -> pd.DataFrame:
-        transformed = []
-        n_scenarios = self.copula_sample.max_rank
-
-        for scenario_ranks in self.copula_sample.ranks:
-            margin_to_value = {}
-            for margin_index, rank in enumerate(scenario_ranks):
+        ranks = np.arange(1, n_scenarios + 1)
+        for margin_index in range(self.data.shape[1]):
+            if self.margin_types[margin_index] == MarginType.DISCRETE:
                 margin_data = self.data.iloc[:, margin_index].to_numpy()
+                value_counts = np.bincount(margin_data.astype(int))
+                cumulative = np.cumsum(value_counts) / len(margin_data)
 
-                if is_discrete(margin_data):
-                    value = self.transform_discrete_variable(margin_data, rank)
-                else:
-                    offset = self._calculate_offset(margin_data, n_scenarios)
-                    value = self.transform_continuous_variable(margin_data, rank, offset)
+                lower_args = (ranks - 1) / n_scenarios
+                upper_args = ranks / n_scenarios
 
-                margin_to_value[self.data.columns[margin_index]] = value
+                lower_bounds, upper_bounds = discrete_transformation_bounds(
+                    cumulative_relative_counts=cumulative,
+                    lower_args=lower_args,
+                    upper_args=upper_args,
+                )
 
-            transformed.append(margin_to_value)
+                max_val = len(value_counts)
+                idx = np.arange(max_val)
 
-        return pd.DataFrame(transformed, columns=self.data.columns)
+                valid = (idx >= lower_bounds[:, None]) & (idx <= upper_bounds[:, None])
+                counts_2d = np.where(valid, value_counts[None, :], -1)
+
+                margin_transformations[margin_index] = counts_2d.argmax(axis=1)
+            else:
+                sorted_margin_data = np.sort(self.data.iloc[:, margin_index].to_numpy())
+
+                quantiles = (ranks - 0.5) / n_scenarios
+                computed_values = inverse_ecdf(sorted_data=sorted_margin_data, args=quantiles)
+                offset = sorted_margin_data.mean() - computed_values.mean()
+
+                margin_transformations[margin_index] = computed_values + offset
+
+        return margin_transformations.T
+
+    def transform(self, copula_sample: CopulaSample) -> pd.DataFrame:
+        transformations = self._compute_transformations(n_scenarios=copula_sample.max_rank)
+
+        result = np.take_along_axis(transformations, copula_sample.ranks - 1, axis=0)
+        return pd.DataFrame(result, columns=self.data.columns)

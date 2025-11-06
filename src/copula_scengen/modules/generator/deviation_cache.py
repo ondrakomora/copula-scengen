@@ -1,10 +1,8 @@
-from math import fabs
-
 import numpy as np
 from pydantic import BaseModel, ConfigDict, PrivateAttr
 
 from copula_scengen.modules.copula.copula_sample2d import CopulaSample2D
-from copula_scengen.modules.copula.empirical_extension_copula2d import EmpiricalExtensionCopula2D
+from copula_scengen.modules.copula.empirical_copula import EmpiricalCopula
 
 
 class DeviationCache(BaseModel):
@@ -16,36 +14,38 @@ class DeviationCache(BaseModel):
     def compute_cache(
         cls,
         copula_samples: list[CopulaSample2D],
-        target_copulas: list[EmpiricalExtensionCopula2D],
+        target_copulas: list[EmpiricalCopula],
         rank: int,
     ) -> "DeviationCache":
         max_rank = copula_samples[0].max_rank
-
         num_margins = len(copula_samples)
+
+        i_arr = np.arange(1, max_rank + 1)
+
+        v_val = rank / max_rank
+        tc_args_upper = np.column_stack((i_arr / max_rank, np.full(i_arr.shape, v_val)))
+        tc_args_lower = np.column_stack(((i_arr - 1) / max_rank, np.full(i_arr.shape, v_val)))
+
         cache_matrix = np.zeros((num_margins, max_rank), dtype=float)
 
-        for margin, copula_sample in enumerate(copula_samples):
-            target_copula = target_copulas[margin]
-            delta = sum(
-                fabs(
-                    copula_sample.evaluate(arg=i)
-                    + 1.0 / max_rank
-                    - target_copula.evaluate(u=i / max_rank, v=rank / max_rank)
-                )
-                for i in range(1, max_rank + 1)
-            )
+        for margin, (copula_sample, target_copula) in enumerate(zip(copula_samples, target_copulas, strict=False)):
+            # vectorized evaluations
+            cs_eval_1 = copula_sample(i_arr)
+            tc_eval_1 = target_copula(args=tc_args_upper)
 
-            for i in range(1, max_rank + 1):
-                copula_sample_eval = copula_sample.evaluate(i - 1)
-                target_copula_eval = target_copula.evaluate(u=(i - 1) / max_rank, v=rank / max_rank)
-                delta += fabs(copula_sample_eval - target_copula_eval) - fabs(
-                    copula_sample_eval + 1.0 / max_rank - target_copula_eval
-                )
-                cache_matrix[margin, i - 1] = delta
+            # first delta term
+            delta = np.sum(np.abs(cs_eval_1 + 1.0 / max_rank - tc_eval_1))
+
+            # second vectorized part
+            cs_eval_2 = copula_sample(i_arr - 1)
+            tc_eval_2 = target_copula(args=tc_args_lower)
+
+            delta_arr = np.abs(cs_eval_2 - tc_eval_2) - np.abs(cs_eval_2 + 1.0 / max_rank - tc_eval_2)
+            cache_matrix[margin] = delta + np.cumsum(delta_arr)
 
         instance = cls()
         instance._cache_matrix = cache_matrix
         return instance
 
-    def evaluate(self, margin: int, rank: int) -> float:
-        return self._cache_matrix[margin, rank - 1]
+    def __call__(self, ranks: np.ndarray) -> np.ndarray:
+        return np.take_along_axis(self._cache_matrix.T, ranks - 1, axis=0)

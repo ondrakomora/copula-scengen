@@ -9,9 +9,17 @@ venv:
 
 install:
 	uv sync --all-extras
+	uv lock
 
 clean:
 	rm -rf $(VENV)
 
 tests:
 	uv run python -m pytest
+
+build:
+	python -m build
+
+upload:
+	twine upload dist/*
+
