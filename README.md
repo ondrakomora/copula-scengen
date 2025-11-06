@@ -9,8 +9,6 @@ Simple usage is as follows.
 ```python
 from copula_scengen import ScenarioGenerator
 
-generator = ScenarioGenerator()
-
 scenario_generator = ScenarioGenerator(data=datafr)
 
 scenarios_datafr = scenario_generator.generate(n_scenarios=10)
