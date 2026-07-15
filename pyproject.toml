@@ -10,16 +10,16 @@ authors = [
 ]
 
 dependencies = [
+    "numpy>=1.26.0",
     "pydantic>=2.9.0",
-    "loguru>=0.7.3",
     "pandas>=2.3.3",
-    "statsmodels>=0.14.5"
 ]
 
 [dependency-groups]
 dev = [
     "ruff==0.14.1",
     "pytest==8.4.2",
+    "loguru>=0.7.3",
 ]
 
 [project.urls]

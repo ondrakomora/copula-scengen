@@ -1,34 +1,24 @@
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel, ConfigDict, model_validator
 
+from copula_scengen.modules.copula.base import CopulaProvider
 from copula_scengen.modules.copula.copula_sample import CopulaSample
 from copula_scengen.modules.copula.copula_sample2d import CopulaSample2D
-from copula_scengen.modules.copula.empirical_copula import EmpiricalCopula
-from copula_scengen.modules.core.random_generator import random_generator
-from copula_scengen.modules.generator.deviation_cache import DeviationCache
-from copula_scengen.modules.utils.margin_type import is_discrete
+from copula_scengen.modules.copula.empirical_copula_provider import EmpiricalCopulaProvider
+from copula_scengen.modules.copula_sample_generators.base import CopulaSampleGenerationStrategy
+from copula_scengen.modules.copula_sample_generators.deviation_cache import DeviationCache
 
 
-class CopulaSampleGenerator(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+class CopulaSampleGenerator(CopulaSampleGenerationStrategy):
+    def __init__(self, copula_provider: CopulaProvider | None = None) -> None:
+        self._copula_provider = copula_provider or EmpiricalCopulaProvider()
 
-    data: pd.DataFrame
-
-    @model_validator(mode="after")
-    def _transform_discrete_margins(self) -> "CopulaSampleGenerator":
-        transformed = self.data.copy()
-        for col in transformed.columns:
-            if is_discrete(transformed[col]):
-                transformed[col] = transformed[col] - random_generator.random(len(transformed))
-        self.data = transformed
-        return self
-
-    def generate(self, n_scenarios: int) -> CopulaSample:
-        copula_sample = CopulaSample.initialize(max_rank=n_scenarios)
-        for new_margin in range(1, self.data.shape[1]):
+    def create(self, data: pd.DataFrame, n_scenarios: int) -> CopulaSample:
+        copula_sample = CopulaSample.initialize(max_rank=n_scenarios, n_margins=data.shape[1])
+        for new_margin in range(1, data.shape[1]):
             copula_sample = self._assign_ranks_to_margin(
                 copula_sample=copula_sample,
+                data=data,
                 margin=new_margin,
                 n_scenarios=n_scenarios,
             )
@@ -37,6 +27,7 @@ class CopulaSampleGenerator(BaseModel):
     def _assign_ranks_to_margin(
         self,
         copula_sample: CopulaSample,
+        data: pd.DataFrame,
         margin: int,
         n_scenarios: int,
     ) -> CopulaSample:
@@ -44,10 +35,7 @@ class CopulaSampleGenerator(BaseModel):
 
         copula_samples_2d = [CopulaSample2D.initialize(n_scenarios) for _ in range(margin)]
         target_copulas = [
-            EmpiricalCopula(
-                data=self.data.iloc[:, [prior_margin, margin]].to_numpy(),
-            )
-            for prior_margin in range(margin)
+            self._copula_provider.get(data=data, margins=[prior_margin, margin]) for prior_margin in range(margin)
         ]
 
         new_ranks = np.zeros(n_scenarios, dtype=int)

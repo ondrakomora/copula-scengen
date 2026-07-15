@@ -1,18 +1,14 @@
 import numpy as np
-from pydantic import BaseModel, ConfigDict, PrivateAttr
 
 
-class CopulaSample2D(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    max_rank: int
-    _cache: np.ndarray = PrivateAttr(default=np.array([]))
+class CopulaSample2D:
+    def __init__(self, max_rank: int) -> None:
+        self.max_rank = max_rank
+        self._cache = np.zeros(max_rank)
 
     @classmethod
     def initialize(cls, max_rank: int) -> "CopulaSample2D":
-        obj = cls(max_rank=max_rank)
-        obj._cache = np.zeros(max_rank)
-        return obj
+        return cls(max_rank=max_rank)
 
     def __call__(self, arg: np.ndarray) -> float | np.ndarray:
         arr = np.asarray(arg) - 1

@@ -1,20 +1,18 @@
 import numpy as np
-from pydantic import BaseModel, ConfigDict, PrivateAttr
 
+from copula_scengen.modules.copula.base import Copula
 from copula_scengen.modules.copula.copula_sample2d import CopulaSample2D
-from copula_scengen.modules.copula.empirical_copula import EmpiricalCopula
 
 
-class DeviationCache(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    _cache_matrix: np.ndarray = PrivateAttr(default=np.array([]))
+class DeviationCache:
+    def __init__(self, cache_matrix: np.ndarray) -> None:
+        self._cache_matrix = cache_matrix
 
     @classmethod
     def compute_cache(
         cls,
         copula_samples: list[CopulaSample2D],
-        target_copulas: list[EmpiricalCopula],
+        target_copulas: list[Copula],
         rank: int,
     ) -> "DeviationCache":
         max_rank = copula_samples[0].max_rank
@@ -43,9 +41,7 @@ class DeviationCache(BaseModel):
             delta_arr = np.abs(cs_eval_2 - tc_eval_2) - np.abs(cs_eval_2 + 1.0 / max_rank - tc_eval_2)
             cache_matrix[margin] = delta + np.cumsum(delta_arr)
 
-        instance = cls()
-        instance._cache_matrix = cache_matrix
-        return instance
+        return cls(cache_matrix=cache_matrix)
 
     def __call__(self, ranks: np.ndarray) -> np.ndarray:
         return np.take_along_axis(self._cache_matrix.T, ranks - 1, axis=0)

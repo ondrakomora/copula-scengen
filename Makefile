@@ -1,7 +1,7 @@
 VENV := .venv
 PYTHON := python3.10
 
-.PHONY: venv install init clean
+.PHONY: venv install init clean format lint test tests build upload
 
 venv: 
 	@echo "Using Python version: ${PYTHON_VERSION}"
@@ -14,8 +14,20 @@ install:
 clean:
 	rm -rf $(VENV)
 
-tests:
+format:
+	uv run ruff format .
+
+lint:
+	uv run ruff check .
+
+test:
 	uv run python -m pytest
+
+
+check:
+	$(MAKE) format
+	$(MAKE) lint
+	$(MAKE) test
 
 build:
 	python -m build
