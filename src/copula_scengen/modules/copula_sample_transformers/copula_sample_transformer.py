@@ -5,8 +5,7 @@ from copula_scengen.modules.copula.copula_sample import CopulaSample
 from copula_scengen.modules.copula_sample_transformers.base import CopulaSampleTransformationStrategy
 from copula_scengen.modules.functions.discrete_transformation_bounds import discrete_transformation_bounds
 from copula_scengen.modules.functions.inverse_ecdf import inverse_ecdf
-from copula_scengen.modules.utils.margin_type import is_discrete
-from copula_scengen.schemas.margin_type import MarginType
+from copula_scengen.schemas.margin_type import MarginType, is_discrete
 
 
 class CopulaSampleTransformer(CopulaSampleTransformationStrategy):

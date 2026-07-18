@@ -7,26 +7,6 @@ class CopulaSample:
         self.max_rank = max_rank
         self._buffer: np.ndarray | None = None
         self._filled = 0
-        self._validate_ranks()
-
-    def _validate_ranks(self) -> None:
-        """Ensure ranks are integers, within range [1, max_rank], and unique within each column."""
-        ranks = self.ranks
-
-        if not np.issubdtype(ranks.dtype, np.integer):
-            msg = "Ranks must contain only integers"
-            raise ValueError(msg)
-
-        if np.any(ranks < 1) or np.any(ranks > self.max_rank):
-            msg = f"Ranks must be integers in the range [1, {self.max_rank}]"
-            raise ValueError(msg)
-
-        # Uniqueness check per column
-        for j in range(ranks.shape[1]):
-            col = ranks[:, j]
-            if np.unique(col).size != col.size:
-                msg = f"Column {j} of ranks contains duplicate values"
-                raise ValueError(msg)
 
     @classmethod
     def initialize(cls, max_rank: int, n_margins: int = 1) -> "CopulaSample":

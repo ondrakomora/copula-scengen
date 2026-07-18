@@ -3,29 +3,12 @@ from functools import cached_property
 import numpy as np
 
 from copula_scengen.modules.copula.base import Copula
-from copula_scengen.modules.utils.pseudoobservations import compute_pseudoobservations
+from copula_scengen.modules.functions.pseudoobservations import compute_pseudoobservations
 
 
 class EmpiricalCopula(Copula):
     def __init__(self, data: np.ndarray) -> None:
-        self.data = self._validate_data(data)
-
-    @staticmethod
-    def _validate_data(v: np.ndarray) -> np.ndarray:
-        if not isinstance(v, np.ndarray):
-            msg = "Data must be a numpy.ndarray"
-            raise TypeError(msg)
-        if v.ndim != 2:  # noqa: PLR2004
-            msg = f"Data must be a 2D array, got shape {v.shape}"
-            raise ValueError(msg)
-        n, d = v.shape
-        if n < 1 or d < 1:
-            msg = "Data must contain at least one sample and one dimension"
-            raise ValueError(msg)
-        if not np.isfinite(v).all():
-            msg = "Data contains NaN or infinite values"
-            raise ValueError(msg)
-        return v
+        self.data = data
 
     @cached_property
     def pseudo_observations(self) -> np.ndarray:
@@ -37,21 +20,42 @@ class EmpiricalCopula(Copula):
         if args.ndim == 1:
             args = args[None, :]
 
-        if len(args.shape) != 2:  # noqa: PLR2004
-            msg = "Arguments must be a 2D array"
-            raise ValueError(msg)
-
-        d = args.shape[1]
-        if d != self.data.shape[1]:
-            msg = f"Each argument must have dimension {self.data.shape[1]}, got {d}"
-            raise ValueError(msg)
-
-        if not np.isfinite(args).all():
-            msg = "Arguments contain NaN or infinite values"
-            raise ValueError(msg)
-
-        if not np.all((args >= 0) & (args <= 1)):
-            msg = "All elements of argument must be in [0, 1]"
-            raise ValueError(msg)
-
         return np.mean((args[:, None, :] >= self.pseudo_observations[None, :, :]).all(axis=2), axis=1)
+
+    def cumulative_counts(self, thresholds: list[np.ndarray]) -> np.ndarray:
+        """
+        Evaluate the empirical copula on the axis-aligned lattice spanned by ``thresholds``.
+
+        ``thresholds[a]`` is a sorted 1D array of query values for axis ``a``. The returned
+        array ``G`` has shape ``tuple(t.size for t in thresholds)`` with
+
+            G[i_0, ..., i_{d-1}] == C((thresholds[0][i_0], ..., thresholds[d-1][i_{d-1}]))
+
+        computed via a d-dimensional cumulative histogram of the pseudo-observations. This
+        is ``O(n + prod(sizes))`` instead of the ``O(n * prod(sizes))`` broadcast in
+        :meth:`__call__`, and is bit-identical because each point is binned at the smallest
+        threshold index ``j`` with ``thresholds[a][j] >= pseudo`` (matching the ``>=`` test).
+        """
+        pseudo = self.pseudo_observations
+        n, d = pseudo.shape
+        shape = tuple(t.size for t in thresholds)
+
+        # smallest index j on each axis with thresholds[a][j] >= pseudo; == size means the
+        # point exceeds every threshold on that axis and therefore contributes nowhere.
+        per_axis_idx = [np.searchsorted(thresholds[a], pseudo[:, a], side="left") for a in range(d)]
+        valid = np.ones(n, dtype=bool)
+        for a in range(d):
+            valid &= per_axis_idx[a] < shape[a]
+
+        counts = np.zeros(shape, dtype=np.int64)
+        np.add.at(counts, tuple(idx[valid] for idx in per_axis_idx), 1)
+
+        grid = counts
+        for a in range(d):
+            grid = np.cumsum(grid, axis=a)
+        return grid / n
+
+    def grid(self, max_rank: int) -> np.ndarray:
+        """Evaluate the copula on the lattice ``(i / max_rank)`` per axis, exactly and quickly."""
+        coords = np.arange(max_rank + 1) / max_rank
+        return self.cumulative_counts([coords] * self.data.shape[1])

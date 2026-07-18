@@ -34,8 +34,12 @@ class CopulaSampleGenerator(CopulaSampleGenerationStrategy):
         available = np.ones(n_scenarios, dtype=bool)
 
         copula_samples_2d = [CopulaSample2D.initialize(n_scenarios) for _ in range(margin)]
-        target_copulas = [
-            self._copula_provider.get(data=data, margins=[prior_margin, margin]) for prior_margin in range(margin)
+        target_grids = [
+            DeviationCache.precompute_target_grid(
+                target_copula=self._copula_provider.get(data=data, margins=[prior_margin, margin]),
+                max_rank=n_scenarios,
+            )
+            for prior_margin in range(margin)
         ]
 
         new_ranks = np.zeros(n_scenarios, dtype=int)
@@ -45,7 +49,7 @@ class CopulaSampleGenerator(CopulaSampleGenerationStrategy):
         for new_rank in range(1, n_scenarios + 1):
             cache = DeviationCache.compute_cache(
                 copula_samples=copula_samples_2d,
-                target_copulas=target_copulas,
+                target_grids=target_grids,
                 rank=new_rank,
             )
 
