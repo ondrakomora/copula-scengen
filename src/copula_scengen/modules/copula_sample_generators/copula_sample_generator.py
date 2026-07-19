@@ -4,14 +4,14 @@ import pandas as pd
 from copula_scengen.modules.copula.base import CopulaProvider
 from copula_scengen.modules.copula.copula_sample import CopulaSample
 from copula_scengen.modules.copula.copula_sample2d import CopulaSample2D
-from copula_scengen.modules.copula.empirical_copula_provider import EmpiricalCopulaProvider
+from copula_scengen.modules.copula.extended_empirical_copula_provider import ExtendedEmpiricalCopulaProvider
 from copula_scengen.modules.copula_sample_generators.base import CopulaSampleGenerationStrategy
 from copula_scengen.modules.copula_sample_generators.deviation_cache import DeviationCache
 
 
 class CopulaSampleGenerator(CopulaSampleGenerationStrategy):
     def __init__(self, copula_provider: CopulaProvider | None = None) -> None:
-        self._copula_provider = copula_provider or EmpiricalCopulaProvider()
+        self._copula_provider = copula_provider or ExtendedEmpiricalCopulaProvider()
 
     def create(self, data: pd.DataFrame, n_scenarios: int) -> CopulaSample:
         copula_sample = CopulaSample.initialize(max_rank=n_scenarios, n_margins=data.shape[1])

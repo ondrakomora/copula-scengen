@@ -30,7 +30,7 @@ check:
 	$(MAKE) test
 
 build:
-	python -m build
+	uv build
 
 upload:
 	twine upload dist/*
