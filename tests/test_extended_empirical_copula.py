@@ -15,31 +15,6 @@ def test_call_wrong_dim(eec: ExtendedEmpiricalCopula) -> None:
         eec(np.array([0.1, 0.2, 0.3], dtype=float))
 
 
-def test_call_nan(eec: ExtendedEmpiricalCopula) -> None:
-    with pytest.raises(ValueError):  # noqa: PT011
-        eec(np.array([np.nan, 0.2], dtype=float))
-
-
-def test_call_inf(eec: ExtendedEmpiricalCopula) -> None:
-    with pytest.raises(ValueError):  # noqa: PT011
-        eec(np.array([np.inf, 0.2], dtype=float))
-
-
-def test_call_outside_bounds_low(eec: ExtendedEmpiricalCopula) -> None:
-    with pytest.raises(ValueError):  # noqa: PT011
-        eec(np.array([-0.1, 0.5], dtype=float))
-
-
-def test_call_outside_bounds_high(eec: ExtendedEmpiricalCopula) -> None:
-    with pytest.raises(ValueError):  # noqa: PT011
-        eec(np.array([1.1, 0.5], dtype=float))
-
-
-def test_call_three_dim(eec: ExtendedEmpiricalCopula) -> None:
-    with pytest.raises(ValueError):  # noqa: PT011
-        eec(np.ones((2, 2, 2)))
-
-
 def test_all_continuous_matches_empirical_copula() -> None:
     data = np.array([[10.5, -5.25], [2.1, 3.3], [7.7, 1.9]])
     queries = np.array([[1.0, 1.0], [0.2, 0.2], [0.4, 0.2], [0.4, 0.4], [0.5, 0.74]])

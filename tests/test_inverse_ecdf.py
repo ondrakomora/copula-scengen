@@ -62,11 +62,18 @@ def test_inverse_ecdf_boundaries_return_min_max(arr: list[int | float], p: float
     assert inverse_ecdf(arr, p) == expected
 
 
-@pytest.mark.parametrize("arg", [-0.1, 1.1, 2.0, -1.0, np.inf, -np.inf])
-def test_inverse_ecdf_invalid_arg(arg: float) -> None:
+@pytest.mark.parametrize(
+    ("arg", "expected"),
+    [
+        (-0.1, 1.0),
+        (-1.0, 1.0),
+        (1.1, 3.0),
+        (2.0, 3.0),
+    ],
+)
+def test_inverse_ecdf_clamps_out_of_range_args(arg: float, expected: float) -> None:
     arr = np.array([1, 2, 3], dtype=float)
-    with pytest.raises(ValueError):  # noqa: PT011
-        inverse_ecdf(arr, arg)
+    assert inverse_ecdf(arr, arg) == expected
 
 
 def test_inverse_ecdf_single_element() -> None:

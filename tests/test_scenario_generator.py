@@ -32,12 +32,11 @@ def test_scenario_generator_uses_injected_strategies() -> None:
     transformation_strategy = StubTransformationStrategy()
 
     generator = ScenarioGenerator(
-        data=data,
-        sample_creation_strategy=creation_strategy,
-        sample_transformation_strategy=transformation_strategy,
+        copula_sample_generation_strategy=creation_strategy,
+        copula_sample_transformation_strategy=transformation_strategy,
     )
 
-    result = generator.generate(n_scenarios=2)
+    result = generator.generate(data=data, n_scenarios=2)
 
     assert result.equals(expected)
     assert creation_strategy.calls == [(["x", "y"], 2)]
@@ -52,7 +51,7 @@ def test_scenario_generator_default_strategies_generate_dataframe() -> None:
         },
     )
 
-    scenarios = ScenarioGenerator(data=data).generate(n_scenarios=3)
+    scenarios = ScenarioGenerator().generate(data=data, n_scenarios=3)
 
     assert scenarios.shape == (3, 2)
     assert list(scenarios.columns) == ["a", "b"]

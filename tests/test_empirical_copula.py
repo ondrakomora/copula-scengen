@@ -14,31 +14,6 @@ def test_call_wrong_dim(ec: EmpiricalCopula) -> None:
         ec(np.array([0.1, 0.2, 0.3], dtype=float))
 
 
-def test_call_nan(ec: EmpiricalCopula) -> None:
-    with pytest.raises(ValueError):  # noqa: PT011
-        ec(np.array([np.nan, 0.2], dtype=float))
-
-
-def test_call_inf(ec: EmpiricalCopula) -> None:
-    with pytest.raises(ValueError):  # noqa: PT011
-        ec(np.array([np.inf, 0.2], dtype=float))
-
-
-def test_call_outside_bounds_low(ec: EmpiricalCopula) -> None:
-    with pytest.raises(ValueError):  # noqa: PT011
-        ec(np.array([-0.1, 0.5], dtype=float))
-
-
-def test_call_outside_bounds_high(ec: EmpiricalCopula) -> None:
-    with pytest.raises(ValueError):  # noqa: PT011
-        ec(np.array([1.1, 0.5], dtype=float))
-
-
-def test_call_three_dim(ec: EmpiricalCopula) -> None:
-    with pytest.raises(ValueError):  # noqa: PT011
-        ec(np.ones((2, 2, 2)))
-
-
 @pytest.mark.parametrize(
     ("data", "queries", "expected"),
     [

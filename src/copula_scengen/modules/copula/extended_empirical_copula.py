@@ -110,7 +110,7 @@ class ExtendedEmpiricalCopula(Copula):
         """
         coords = np.arange(max_rank + 1) / max_rank
 
-        if self.data.shape[1] != 2:
+        if self.data.shape[1] != 2:  # noqa: PLR2004
             first, second = np.meshgrid(coords, coords, indexing="ij")
             args = np.column_stack((first.ravel(), second.ravel()))
             return self(args).reshape(max_rank + 1, max_rank + 1)
