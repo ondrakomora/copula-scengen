@@ -1,17 +1,32 @@
 import numpy as np
 import pandas as pd
 
-from copula_scengen.copula.base import CopulaProvider
+from copula_scengen.copula.base import Copula, CopulaFactory
 from copula_scengen.copula.copula_sample import CopulaSample
-from copula_scengen.copula.copula_sample2d import CopulaSample2D
-from copula_scengen.copula.extended_empirical_copula_provider import ExtendedEmpiricalCopulaProvider
+from copula_scengen.copula.extended_empirical_copula import ExtendedEmpiricalCopula
 from copula_scengen.copula_sample_generators.base import CopulaSampleGenerationStrategy
+from copula_scengen.copula_sample_generators.copula_sample2d import CopulaSample2D
 from copula_scengen.copula_sample_generators.deviation_cache import DeviationCache
 
 
 class CopulaSampleGenerator(CopulaSampleGenerationStrategy):
-    def __init__(self, copula_provider: CopulaProvider | None = None) -> None:
-        self._copula_provider = copula_provider or ExtendedEmpiricalCopulaProvider()
+    def __init__(
+        self,
+        copula_type: type[Copula] | None = None,
+        copula_factory: CopulaFactory | None = None,
+    ) -> None:
+        if copula_type is not None and copula_factory is not None:
+            msg = "copula_type and copula_factory cannot both be provided"
+            raise ValueError(msg)
+
+        self._copula_factory = copula_factory or self._factory_from_type(copula_type or ExtendedEmpiricalCopula)
+
+    @staticmethod
+    def _factory_from_type(copula_type: type[Copula]) -> CopulaFactory:
+        def factory(data: pd.DataFrame, margins: list[int]) -> Copula:
+            return copula_type(data.iloc[:, margins].to_numpy())
+
+        return factory
 
     def create(self, data: pd.DataFrame, n_scenarios: int) -> CopulaSample:
         copula_sample = CopulaSample.initialize(max_rank=n_scenarios, n_margins=data.shape[1])
@@ -36,7 +51,7 @@ class CopulaSampleGenerator(CopulaSampleGenerationStrategy):
         copula_samples_2d = [CopulaSample2D.initialize(n_scenarios) for _ in range(margin)]
         target_grids = [
             DeviationCache.precompute_target_grid(
-                target_copula=self._copula_provider.get(data=data, margins=[prior_margin, margin]),
+                target_copula=self._copula_factory(data, [prior_margin, margin]),
                 max_rank=n_scenarios,
             )
             for prior_margin in range(margin)

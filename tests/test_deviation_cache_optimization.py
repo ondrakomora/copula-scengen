@@ -11,21 +11,21 @@ evaluation and assert that the refactored code produces bit-identical results.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from collections.abc import Callable, Sequence
 
 import numpy as np
 import pandas as pd
 import pytest
 
+from copula_scengen.copula.base import Copula
 from copula_scengen.copula.copula_sample import CopulaSample
-from copula_scengen.copula.copula_sample2d import CopulaSample2D
-from copula_scengen.copula.empirical_copula_provider import EmpiricalCopulaProvider
-from copula_scengen.copula.extended_empirical_copula_provider import ExtendedEmpiricalCopulaProvider
+from copula_scengen.copula.empirical_copula import EmpiricalCopula
+from copula_scengen.copula.extended_empirical_copula import ExtendedEmpiricalCopula
+from copula_scengen.copula_sample_generators.copula_sample2d import CopulaSample2D
 from copula_scengen.copula_sample_generators.copula_sample_generator import CopulaSampleGenerator
 from copula_scengen.copula_sample_generators.deviation_cache import DeviationCache
 
-if TYPE_CHECKING:
-    from copula_scengen.copula.base import Copula, CopulaProvider
+CopulaFactory = Callable[[pd.DataFrame, Sequence[int]], Copula]
 
 
 # --------------------------------------------------------------------------- #
@@ -58,13 +58,13 @@ def _reference_compute_cache(
     return cache_matrix
 
 
-def _reference_create(provider: CopulaProvider, data: pd.DataFrame, n_scenarios: int) -> np.ndarray:
+def _reference_create(copula_factory: CopulaFactory, data: pd.DataFrame, n_scenarios: int) -> np.ndarray:
     """Original greedy generator producing the copula-sample rank matrix."""
     copula_sample = CopulaSample.initialize(max_rank=n_scenarios, n_margins=data.shape[1])
     for margin in range(1, data.shape[1]):
         available = np.ones(n_scenarios, dtype=bool)
         copula_samples_2d = [CopulaSample2D.initialize(n_scenarios) for _ in range(margin)]
-        target_copulas = [provider.get(data=data, margins=[prior, margin]) for prior in range(margin)]
+        target_copulas = [copula_factory(data, [prior, margin]) for prior in range(margin)]
         new_ranks = np.zeros(n_scenarios, dtype=int)
         all_scenarios = copula_sample.retrieve_scenarios(scenario_idxs=np.arange(n_scenarios))
 
@@ -106,21 +106,39 @@ def _datasets() -> list[tuple[str, pd.DataFrame, int]]:
     ]
 
 
-_PROVIDERS = [
-    ("empirical", EmpiricalCopulaProvider()),
-    ("extended", ExtendedEmpiricalCopulaProvider()),
+def _copula_factory(copula_type: type[Copula]) -> CopulaFactory:
+    def factory(data: pd.DataFrame, margins: Sequence[int]) -> Copula:
+        return copula_type(data=data.iloc[:, list(margins)].to_numpy())
+
+    return factory
+
+
+_COPULA_TYPES = [
+    ("empirical", EmpiricalCopula),
+    ("extended", ExtendedEmpiricalCopula),
 ]
 
 
 # --------------------------------------------------------------------------- #
 # Tests
 # --------------------------------------------------------------------------- #
-@pytest.mark.parametrize(("_provider_name", "provider"), _PROVIDERS)
+def test_precompute_target_grid_uses_copula_default_grid() -> None:
+    class CallableCopula(Copula):
+        def __call__(self, args: np.ndarray) -> np.ndarray:
+            return args[:, 0] * args[:, 1]
+
+    copula = CallableCopula()
+    grid = copula.grid(max_rank=2)
+
+    np.testing.assert_array_equal(grid, np.array([[0.0, 0.0, 0.0], [0.0, 0.25, 0.5], [0.0, 0.5, 1.0]]))
+
+
+@pytest.mark.parametrize(("_copula_name", "copula_type"), _COPULA_TYPES)
 @pytest.mark.parametrize(("_tag", "data", "n_scenarios"), _datasets())
 def test_precompute_target_grid_matches_direct_call(
-    _provider_name: str, provider: CopulaProvider, _tag: str, data: pd.DataFrame, n_scenarios: int
+    _copula_name: str, copula_type: type[Copula], _tag: str, data: pd.DataFrame, n_scenarios: int
 ) -> None:
-    copula = provider.get(data=data, margins=[0, 1])
+    copula = _copula_factory(copula_type)(data, [0, 1])
     grid = DeviationCache.precompute_target_grid(target_copula=copula, max_rank=n_scenarios)
 
     coords = np.arange(n_scenarios + 1) / n_scenarios
@@ -130,14 +148,15 @@ def test_precompute_target_grid_matches_direct_call(
     np.testing.assert_array_equal(grid, expected)
 
 
-@pytest.mark.parametrize(("_provider_name", "provider"), _PROVIDERS)
+@pytest.mark.parametrize(("_copula_name", "copula_type"), _COPULA_TYPES)
 @pytest.mark.parametrize(("_tag", "data", "n_scenarios"), _datasets())
 def test_compute_cache_matches_reference(
-    _provider_name: str, provider: CopulaProvider, _tag: str, data: pd.DataFrame, n_scenarios: int
+    _copula_name: str, copula_type: type[Copula], _tag: str, data: pd.DataFrame, n_scenarios: int
 ) -> None:
     margin = 2 if data.shape[1] > 2 else 1
     copula_samples = [CopulaSample2D.initialize(n_scenarios) for _ in range(margin)]
-    target_copulas = [provider.get(data=data, margins=[prior, margin]) for prior in range(margin)]
+    factory = _copula_factory(copula_type)
+    target_copulas = [factory(data, [prior, margin]) for prior in range(margin)]
     target_grids = [DeviationCache.precompute_target_grid(tc, n_scenarios) for tc in target_copulas]
 
     # exercise several ranks, mutating the 2D samples between iterations like the real loop
@@ -149,11 +168,24 @@ def test_compute_cache_matches_reference(
             cs2d.assign(rank=rank)
 
 
-@pytest.mark.parametrize(("_provider_name", "provider"), _PROVIDERS)
+@pytest.mark.parametrize(("_copula_name", "copula_type"), _COPULA_TYPES)
 @pytest.mark.parametrize(("_tag", "data", "n_scenarios"), _datasets())
 def test_generator_matches_reference(
-    _provider_name: str, provider: CopulaProvider, _tag: str, data: pd.DataFrame, n_scenarios: int
+    _copula_name: str, copula_type: type[Copula], _tag: str, data: pd.DataFrame, n_scenarios: int
 ) -> None:
-    optimized = CopulaSampleGenerator(copula_provider=provider).create(data=data, n_scenarios=n_scenarios).ranks
-    reference = _reference_create(provider=provider, data=data, n_scenarios=n_scenarios)
+    optimized = CopulaSampleGenerator(copula_type=copula_type).create(data=data, n_scenarios=n_scenarios).ranks
+    reference = _reference_create(copula_factory=_copula_factory(copula_type), data=data, n_scenarios=n_scenarios)
     np.testing.assert_array_equal(optimized, reference)
+
+
+def test_generator_passes_data_and_margins_to_copula_factory() -> None:
+    data = pd.DataFrame({"x": [0.1, 0.5, 0.9], "y": [1.0, 2.0, 3.0]})
+    calls: list[tuple[pd.DataFrame, list[int]]] = []
+
+    def factory(factory_data: pd.DataFrame, margins: Sequence[int]) -> Copula:
+        calls.append((factory_data, list(margins)))
+        return ExtendedEmpiricalCopula(data=factory_data.iloc[:, list(margins)].to_numpy())
+
+    CopulaSampleGenerator(copula_factory=factory).create(data=data, n_scenarios=3)
+
+    assert calls == [(data, [0, 1])]

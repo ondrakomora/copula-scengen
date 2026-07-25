@@ -4,6 +4,7 @@ import pandas as pd
 from copula_scengen.copula.copula_sample import CopulaSample
 from copula_scengen.copula_sample_generators.base import CopulaSampleGenerationStrategy
 from copula_scengen.copula_sample_transformers.base import CopulaSampleTransformationStrategy
+from copula_scengen.preprocessing.base import DataEncoder
 from copula_scengen.scenario_generators.scenario_generator import ScenarioGenerator
 
 
@@ -63,6 +64,21 @@ def test_scenario_generator_setters_accept_structural_strategies() -> None:
     result = generator.generate(data=data, n_scenarios=2)
 
     assert result.equals(expected)
+
+
+def test_scenario_generator_setter_accepts_structural_data_encoder() -> None:
+    class Encoder:
+        def encode(self, data: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, np.ndarray]]:
+            return data, {}
+
+        def decode(self, data: pd.DataFrame, mapping: dict[str, np.ndarray]) -> pd.DataFrame:
+            return data
+
+    encoder = Encoder()
+    generator = ScenarioGenerator()
+    generator.set_data_encoder(encoder)
+
+    assert isinstance(encoder, DataEncoder)
 
 
 def test_scenario_generator_default_strategies_generate_dataframe() -> None:

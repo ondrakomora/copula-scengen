@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from typing import TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -25,7 +26,4 @@ class Copula(ABC):
         return self(args).reshape(max_rank + 1, max_rank + 1)
 
 
-class CopulaProvider(ABC):
-    @abstractmethod
-    def get(self, data: pd.DataFrame, margins: Sequence[int]) -> Copula:
-        """Return a copula fit on data.iloc[:, margins]."""
+CopulaFactory: TypeAlias = Callable[[pd.DataFrame, Sequence[int]], Copula]
