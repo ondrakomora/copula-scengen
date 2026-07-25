@@ -43,6 +43,28 @@ def test_scenario_generator_uses_injected_strategies() -> None:
     assert transformation_strategy.calls == [(["x", "y"], 2)]
 
 
+def test_scenario_generator_setters_accept_structural_strategies() -> None:
+    data = pd.DataFrame({"x": [0.0, 1.0]})
+    copula_sample = CopulaSample.initialize(max_rank=2)
+    expected = pd.DataFrame({"x": [100.0, 200.0]})
+
+    class CreationStrategy:
+        def create(self, data: pd.DataFrame, n_scenarios: int) -> CopulaSample:
+            return copula_sample
+
+    class TransformationStrategy:
+        def transform(self, data: pd.DataFrame, copula_sample: CopulaSample) -> pd.DataFrame:
+            return expected
+
+    generator = ScenarioGenerator()
+    generator.set_copula_sample_generation_strategy(CreationStrategy())
+    generator.set_copula_sample_transformation_strategy(TransformationStrategy())
+
+    result = generator.generate(data=data, n_scenarios=2)
+
+    assert result.equals(expected)
+
+
 def test_scenario_generator_default_strategies_generate_dataframe() -> None:
     data = pd.DataFrame(
         {

@@ -1,11 +1,12 @@
-from abc import ABC, abstractmethod
+from typing import Protocol, runtime_checkable
 
 import pandas as pd
 
 from copula_scengen.copula.copula_sample import CopulaSample
 
 
-class CopulaSampleGenerationStrategy(ABC):
-    @abstractmethod
+@runtime_checkable
+class CopulaSampleGenerationStrategy(Protocol):
     def create(self, data: pd.DataFrame, n_scenarios: int) -> CopulaSample:
         """Create a rank-based copula sample."""
+        ...

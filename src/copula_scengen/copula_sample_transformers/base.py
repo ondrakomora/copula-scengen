@@ -1,11 +1,12 @@
-from abc import ABC, abstractmethod
+from typing import Protocol, runtime_checkable
 
 import pandas as pd
 
 from copula_scengen.copula.copula_sample import CopulaSample
 
 
-class CopulaSampleTransformationStrategy(ABC):
-    @abstractmethod
+@runtime_checkable
+class CopulaSampleTransformationStrategy(Protocol):
     def transform(self, data: pd.DataFrame, copula_sample: CopulaSample) -> pd.DataFrame:
         """Transform copula ranks into scenario values."""
+        ...
