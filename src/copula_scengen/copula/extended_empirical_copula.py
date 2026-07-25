@@ -3,9 +3,9 @@ from itertools import combinations
 
 import numpy as np
 
-from copula_scengen.modules.copula.base import Copula
-from copula_scengen.modules.copula.empirical_copula import EmpiricalCopula
-from copula_scengen.schemas.margin_type import is_discrete
+from copula_scengen.copula.base import Copula
+from copula_scengen.copula.empirical_copula import EmpiricalCopula
+from copula_scengen.functions.is_discrete import is_discrete
 
 _TOLERANCE = 1e-9
 

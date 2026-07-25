@@ -17,15 +17,15 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from copula_scengen.modules.copula.copula_sample import CopulaSample
-from copula_scengen.modules.copula.copula_sample2d import CopulaSample2D
-from copula_scengen.modules.copula.empirical_copula_provider import EmpiricalCopulaProvider
-from copula_scengen.modules.copula.extended_empirical_copula_provider import ExtendedEmpiricalCopulaProvider
-from copula_scengen.modules.copula_sample_generators.copula_sample_generator import CopulaSampleGenerator
-from copula_scengen.modules.copula_sample_generators.deviation_cache import DeviationCache
+from copula_scengen.copula.copula_sample import CopulaSample
+from copula_scengen.copula.copula_sample2d import CopulaSample2D
+from copula_scengen.copula.empirical_copula_provider import EmpiricalCopulaProvider
+from copula_scengen.copula.extended_empirical_copula_provider import ExtendedEmpiricalCopulaProvider
+from copula_scengen.copula_sample_generators.copula_sample_generator import CopulaSampleGenerator
+from copula_scengen.copula_sample_generators.deviation_cache import DeviationCache
 
 if TYPE_CHECKING:
-    from copula_scengen.modules.copula.base import Copula, CopulaProvider
+    from copula_scengen.copula.base import Copula, CopulaProvider
 
 
 # --------------------------------------------------------------------------- #

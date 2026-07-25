@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 
-from copula_scengen.modules.copula.copula_sample import CopulaSample
-from copula_scengen.modules.copula_sample_transformers import _shared
-from copula_scengen.modules.copula_sample_transformers.base import CopulaSampleTransformationStrategy
-from copula_scengen.modules.functions.inverse_ecdf import inverse_ecdf
+from copula_scengen.copula.copula_sample import CopulaSample
+from copula_scengen.copula_sample_transformers import _shared
+from copula_scengen.copula_sample_transformers.base import CopulaSampleTransformationStrategy
+from copula_scengen.functions.inverse_ecdf import inverse_ecdf
 
 
 class EmpiricalCopulaSampleTransformer(CopulaSampleTransformationStrategy):

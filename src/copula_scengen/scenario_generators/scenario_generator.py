@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import pandas as pd
 
-from copula_scengen.modules.copula_sample_generators import CopulaSampleGenerator
-from copula_scengen.modules.copula_sample_generators.base import CopulaSampleGenerationStrategy
-from copula_scengen.modules.copula_sample_transformers import CopulaSampleTransformer
-from copula_scengen.modules.copula_sample_transformers.base import CopulaSampleTransformationStrategy
-from copula_scengen.modules.preprocessing import CategoricalEncoder, DataEncoder
-from copula_scengen.modules.scenario_generators.base import BaseScenarioGenerator
+from copula_scengen.copula_sample_generators import CopulaSampleGenerator
+from copula_scengen.copula_sample_generators.base import CopulaSampleGenerationStrategy
+from copula_scengen.copula_sample_transformers import CopulaSampleTransformer
+from copula_scengen.copula_sample_transformers.base import CopulaSampleTransformationStrategy
+from copula_scengen.preprocessing import CategoricalEncoder, DataEncoder
+from copula_scengen.scenario_generators.base import BaseScenarioGenerator
 
 
 class ScenarioGenerator(BaseScenarioGenerator):

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 import pandas as pd
 
-from copula_scengen.modules.copula.copula_sample import CopulaSample
+from copula_scengen.copula.copula_sample import CopulaSample
 
 
 class CopulaSampleTransformationStrategy(ABC):

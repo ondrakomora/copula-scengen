@@ -1,7 +1,7 @@
 import numpy as np
 
-from copula_scengen.modules.copula.base import Copula
-from copula_scengen.modules.copula.copula_sample2d import CopulaSample2D
+from copula_scengen.copula.base import Copula
+from copula_scengen.copula.copula_sample2d import CopulaSample2D
 
 
 class DeviationCache:

@@ -2,8 +2,8 @@ from functools import cached_property
 
 import numpy as np
 
-from copula_scengen.modules.copula.base import Copula
-from copula_scengen.modules.functions.pseudoobservations import compute_pseudoobservations
+from copula_scengen.copula.base import Copula
+from copula_scengen.functions.pseudoobservations import compute_pseudoobservations
 
 
 class EmpiricalCopula(Copula):

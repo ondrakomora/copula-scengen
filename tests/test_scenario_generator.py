@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 
-from copula_scengen.modules.copula.copula_sample import CopulaSample
-from copula_scengen.modules.copula_sample_generators.base import CopulaSampleGenerationStrategy
-from copula_scengen.modules.copula_sample_transformers.base import CopulaSampleTransformationStrategy
-from copula_scengen.modules.scenario_generators.scenario_generator import ScenarioGenerator
+from copula_scengen.copula.copula_sample import CopulaSample
+from copula_scengen.copula_sample_generators.base import CopulaSampleGenerationStrategy
+from copula_scengen.copula_sample_transformers.base import CopulaSampleTransformationStrategy
+from copula_scengen.scenario_generators.scenario_generator import ScenarioGenerator
 
 
 def test_scenario_generator_uses_injected_strategies() -> None:

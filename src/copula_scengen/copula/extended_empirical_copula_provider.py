@@ -2,8 +2,8 @@ from collections.abc import Sequence
 
 import pandas as pd
 
-from copula_scengen.modules.copula.base import CopulaProvider
-from copula_scengen.modules.copula.extended_empirical_copula import ExtendedEmpiricalCopula
+from copula_scengen.copula.base import CopulaProvider
+from copula_scengen.copula.extended_empirical_copula import ExtendedEmpiricalCopula
 
 
 class ExtendedEmpiricalCopulaProvider(CopulaProvider):

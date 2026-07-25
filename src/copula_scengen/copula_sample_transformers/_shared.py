@@ -3,10 +3,10 @@ from collections.abc import Callable
 import numpy as np
 import pandas as pd
 
-from copula_scengen.modules.copula.copula_sample import CopulaSample
-from copula_scengen.modules.functions.discrete_transformation_bounds import discrete_transformation_bounds
-from copula_scengen.modules.functions.inverse_ecdf import inverse_ecdf
-from copula_scengen.schemas.margin_type import is_discrete
+from copula_scengen.copula.copula_sample import CopulaSample
+from copula_scengen.functions.discrete_transformation_bounds import discrete_transformation_bounds
+from copula_scengen.functions.inverse_ecdf import inverse_ecdf
+from copula_scengen.functions.is_discrete import is_discrete
 
 
 def continuous_transformations(margin_data: np.ndarray, n_scenarios: int) -> np.ndarray:

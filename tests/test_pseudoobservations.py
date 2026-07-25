@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from copula_scengen.modules.functions.pseudoobservations import compute_pseudoobservations
+from copula_scengen.functions.pseudoobservations import compute_pseudoobservations
 
 
 @pytest.mark.parametrize(

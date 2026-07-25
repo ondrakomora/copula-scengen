@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from copula_scengen.modules.functions.inverse_ecdf import inverse_ecdf
+from copula_scengen.functions.inverse_ecdf import inverse_ecdf
 
 
 @pytest.mark.parametrize(

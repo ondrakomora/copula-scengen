@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from copula_scengen.modules.preprocessing.base import DataEncoder
+from copula_scengen.preprocessing.base import DataEncoder
 
 CATEGORICAL_DTYPE_KINDS = ("category", "object")
 

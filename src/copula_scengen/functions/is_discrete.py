@@ -1,11 +1,4 @@
-from enum import StrEnum
-
 import numpy as np
-
-
-class MarginType(StrEnum):
-    DISCRETE = "discrete"
-    CONTINUOUS = "continuous"
 
 
 def is_discrete(arr: np.ndarray) -> bool:
