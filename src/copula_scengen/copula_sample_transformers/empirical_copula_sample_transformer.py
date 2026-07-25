@@ -8,7 +8,10 @@ from copula_scengen.functions.inverse_ecdf import inverse_ecdf
 
 
 class EmpiricalCopulaSampleTransformer(CopulaSampleTransformationStrategy):
+    """Transform copula ranks with empirical inverse distribution functions."""
+
     def transform(self, data: pd.DataFrame, copula_sample: CopulaSample) -> pd.DataFrame:
+        """Transform a copula sample into empirical marginal scenarios."""
         n_scenarios = copula_sample.max_rank
         ranks = np.arange(1, n_scenarios + 1)
         quantiles = (ranks - 0.5) / n_scenarios

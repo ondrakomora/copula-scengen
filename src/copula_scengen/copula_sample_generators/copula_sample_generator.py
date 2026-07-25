@@ -10,6 +10,8 @@ from copula_scengen.copula_sample_generators.deviation_cache import DeviationCac
 
 
 class CopulaSampleGenerator(CopulaSampleGenerationStrategy):
+    """Greedily construct copula ranks that match pairwise target copulas."""
+
     def __init__(
         self,
         copula_type: type[Copula] | None = None,
@@ -29,6 +31,7 @@ class CopulaSampleGenerator(CopulaSampleGenerationStrategy):
         return factory
 
     def create(self, data: pd.DataFrame, n_scenarios: int) -> CopulaSample:
+        """Create a rank-based sample for all margins in ``data``."""
         copula_sample = CopulaSample.initialize(max_rank=n_scenarios, n_margins=data.shape[1])
         for new_margin in range(1, data.shape[1]):
             copula_sample = self._assign_ranks_to_margin(

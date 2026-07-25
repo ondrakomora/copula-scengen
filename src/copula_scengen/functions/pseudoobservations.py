@@ -2,6 +2,7 @@ import numpy as np
 
 
 def compute_pseudoobservations(data: np.ndarray) -> np.ndarray:
+    """Convert one-dimensional observations to normalized zero-based ranks."""
     order = np.argsort(data)
     ranks = np.empty(data.size, dtype=np.intp)
     ranks[order] = np.arange(data.size)

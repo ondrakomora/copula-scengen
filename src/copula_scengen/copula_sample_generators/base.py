@@ -7,6 +7,8 @@ from copula_scengen.copula.copula_sample import CopulaSample
 
 @runtime_checkable
 class CopulaSampleGenerationStrategy(Protocol):
+    """Define how to construct a rank-based copula sample."""
+
     def create(self, data: pd.DataFrame, n_scenarios: int) -> CopulaSample:
         """Create a rank-based copula sample."""
         ...

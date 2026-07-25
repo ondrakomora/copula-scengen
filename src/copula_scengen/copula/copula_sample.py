@@ -2,6 +2,8 @@ import numpy as np
 
 
 class CopulaSample:
+    """Store rank assignments for scenarios across copula margins."""
+
     def __init__(self, ranks: np.ndarray, max_rank: int) -> None:
         self.ranks = ranks
         self.max_rank = max_rank
@@ -20,9 +22,11 @@ class CopulaSample:
         return instance
 
     def retrieve_scenarios(self, scenario_idxs: list[int]) -> np.ndarray:
+        """Return rank assignments for the selected scenario indices."""
         return self.ranks[scenario_idxs, :]
 
     def extend(self, new_ranks: np.ndarray) -> "CopulaSample":
+        """Return a sample with ranks for one additional margin."""
         if self._buffer is not None and self._filled < self._buffer.shape[1]:
             buffer = self._buffer
             filled = self._filled + 1

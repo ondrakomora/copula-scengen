@@ -1,10 +1,12 @@
 import numpy as np
 
 from copula_scengen.copula.base import Copula
-from copula_scengen.copula.copula_sample2d import CopulaSample2D
+from copula_scengen.copula_sample_generators.copula_sample2d import CopulaSample2D
 
 
 class DeviationCache:
+    """Cache copula-deviation scores for candidate rank assignments."""
+
     def __init__(self, cache_matrix: np.ndarray) -> None:
         self._cache_matrix = cache_matrix
 
@@ -30,6 +32,7 @@ class DeviationCache:
         target_grids: list[np.ndarray],
         rank: int,
     ) -> "DeviationCache":
+        """Build deviation scores for assigning one rank across all margins."""
         max_rank = copula_samples[0].max_rank
         num_margins = len(copula_samples)
 
@@ -55,4 +58,5 @@ class DeviationCache:
         return cls(cache_matrix=cache_matrix)
 
     def __call__(self, ranks: np.ndarray) -> np.ndarray:
+        """Return cached deviation scores for the supplied prior ranks."""
         return np.take_along_axis(self._cache_matrix.T, ranks - 1, axis=0)

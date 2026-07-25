@@ -2,6 +2,7 @@ import numpy as np
 
 
 def inverse_ecdf(sorted_data: np.ndarray, args: np.ndarray) -> np.ndarray:
+    """Map cumulative probabilities to values in sorted empirical data."""
     # args: array of floats in [0, 1]
 
     n = sorted_data.size

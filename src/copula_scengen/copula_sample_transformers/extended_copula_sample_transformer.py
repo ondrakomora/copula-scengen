@@ -7,6 +7,8 @@ from copula_scengen.copula_sample_transformers.base import CopulaSampleTransform
 
 
 class ExtendedCopulaSampleTransformer(CopulaSampleTransformationStrategy):
+    """Transform copula ranks while preserving discrete-margin extensions."""
+
     def _extended_inverse_ecdf(self, cumulative: np.ndarray, args: np.ndarray) -> np.ndarray:
         indices = np.searchsorted(cumulative, args, side="left")
         previous_cumulative = np.where(indices == 0, 0.0, cumulative[indices - 1])
@@ -31,4 +33,5 @@ class ExtendedCopulaSampleTransformer(CopulaSampleTransformationStrategy):
         return scores.argmax(axis=1)
 
     def transform(self, data: pd.DataFrame, copula_sample: CopulaSample) -> pd.DataFrame:
+        """Transform a copula sample into mixed-margin scenarios."""
         return _shared.transform(data, copula_sample, self._discrete_transformations)

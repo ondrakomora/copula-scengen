@@ -7,6 +7,8 @@ CATEGORICAL_DTYPE_KINDS = ("category", "object")
 
 
 class CategoricalEncoder(DataEncoder):
+    """Encode categorical DataFrame columns as integer codes and decode them."""
+
     def encode(self, data: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, np.ndarray]]:
         """
         Validate `data`, then map categorical columns to integer codes starting at 0.

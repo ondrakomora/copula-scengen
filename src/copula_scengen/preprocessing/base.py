@@ -6,6 +6,8 @@ import pandas as pd
 
 @runtime_checkable
 class DataEncoder(Protocol):
+    """Define reversible encoding for scenario-generator input data."""
+
     def encode(self, data: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, np.ndarray]]:
         """Validate `data` and encode it, returning the encoded data and a decode mapping."""
         ...

@@ -6,6 +6,7 @@ def discrete_transformation_bounds(
     lower_args: np.ndarray,
     upper_args: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
+    """Return allowable discrete values for each quantile interval."""
     # vectorized searchsorted
     lower_bounds = np.searchsorted(cumulative_relative_counts, lower_args, side="right")
     upper_bounds = np.searchsorted(cumulative_relative_counts, upper_args, side="right")

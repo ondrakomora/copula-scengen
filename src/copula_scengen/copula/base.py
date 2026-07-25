@@ -7,6 +7,8 @@ import pandas as pd
 
 
 class Copula(ABC):
+    """Define the interface for evaluating a copula cumulative distribution."""
+
     @abstractmethod
     def __call__(self, args: np.ndarray) -> np.ndarray:
         """Evaluate the copula's CDF at the given points."""

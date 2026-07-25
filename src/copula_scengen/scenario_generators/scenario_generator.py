@@ -11,6 +11,8 @@ from copula_scengen.scenario_generators.base import BaseScenarioGenerator
 
 
 class ScenarioGenerator(BaseScenarioGenerator):
+    """Generate scenarios by encoding data, sampling copula ranks, and decoding results."""
+
     def __init__(
         self,
         copula_sample_generation_strategy: CopulaSampleGenerationStrategy | None = None,
@@ -22,12 +24,14 @@ class ScenarioGenerator(BaseScenarioGenerator):
         self._data_encoder = data_encoder or CategoricalEncoder()
 
     def set_data_encoder(self, encoder: DataEncoder) -> None:
+        """Set the strategy used to encode and decode input data."""
         if not isinstance(encoder, DataEncoder):
             msg = "encoder must implement DataEncoder"
             raise TypeError(msg)
         self._data_encoder = encoder
 
     def set_copula_sample_generation_strategy(self, strategy: CopulaSampleGenerationStrategy) -> None:
+        """Set the strategy used to construct rank-based copula samples."""
         if not isinstance(strategy, CopulaSampleGenerationStrategy):
             msg = "strategy must implement CopulaSampleGenerationStrategy"
             raise TypeError(
@@ -36,6 +40,7 @@ class ScenarioGenerator(BaseScenarioGenerator):
         self._copula_sample_generation_strategy = strategy
 
     def set_copula_sample_transformation_strategy(self, strategy: CopulaSampleTransformationStrategy) -> None:
+        """Set the strategy used to transform ranks into scenario values."""
         if not isinstance(strategy, CopulaSampleTransformationStrategy):
             msg = "strategy must implement CopulaSampleTransformationStrategy"
             raise TypeError(
@@ -44,6 +49,7 @@ class ScenarioGenerator(BaseScenarioGenerator):
         self._copula_sample_transformation_strategy = strategy
 
     def generate(self, data: pd.DataFrame, n_scenarios: int) -> pd.DataFrame:
+        """Generate ``n_scenarios`` rows that preserve the input dependency structure."""
         if not isinstance(data, pd.DataFrame):
             msg = "data must be a pandas DataFrame"
             raise TypeError(msg)

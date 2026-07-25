@@ -7,6 +7,8 @@ from copula_scengen.copula_sample_transformers.base import CopulaSampleTransform
 
 
 class CopulaSampleTransformer(CopulaSampleTransformationStrategy):
+    """Transform copula ranks using discrete-margin selection rules."""
+
     def _discrete_transformations(self, margin_data: np.ndarray, n_scenarios: int) -> np.ndarray:
         value_counts, cumulative = _shared.discrete_distribution(margin_data)
         lower_bounds, upper_bounds = _shared.discrete_bounds(cumulative, n_scenarios)
@@ -17,4 +19,5 @@ class CopulaSampleTransformer(CopulaSampleTransformationStrategy):
         return counts.argmax(axis=1)
 
     def transform(self, data: pd.DataFrame, copula_sample: CopulaSample) -> pd.DataFrame:
+        """Transform a copula sample into scenarios for the supplied data."""
         return _shared.transform(data, copula_sample, self._discrete_transformations)

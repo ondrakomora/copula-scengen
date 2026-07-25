@@ -7,15 +7,19 @@ from copula_scengen.functions.pseudoobservations import compute_pseudoobservatio
 
 
 class EmpiricalCopula(Copula):
+    """Estimate a copula directly from observations using their ranks."""
+
     def __init__(self, data: np.ndarray) -> None:
         self.data = data
 
     @cached_property
     def pseudo_observations(self) -> np.ndarray:
+        """Return normalized ranks for each observed margin."""
         per_margin = [compute_pseudoobservations(self.data[:, j]) for j in range(self.data.shape[1])]
         return np.vstack(per_margin).T.astype(float)
 
     def __call__(self, args: np.ndarray) -> np.ndarray:
+        """Evaluate the empirical copula at one or more points."""
         # allow (d,) -> (1, d)
         if args.ndim == 1:
             args = args[None, :]

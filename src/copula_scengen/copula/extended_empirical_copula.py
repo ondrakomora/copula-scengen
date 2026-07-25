@@ -79,6 +79,7 @@ class ExtendedEmpiricalCopula(Copula):
         return subset_weight * self._inner_copula(query)
 
     def __call__(self, args: np.ndarray) -> np.ndarray:
+        """Evaluate the mixed-margin empirical copula at one or more points."""
         if args.ndim == 1:
             args = args[None, :]
 
