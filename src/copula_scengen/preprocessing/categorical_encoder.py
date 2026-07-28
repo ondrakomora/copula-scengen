@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+from copula_scengen.functions.is_discrete import is_discrete
 from copula_scengen.preprocessing.base import DataEncoder
 
 CATEGORICAL_DTYPE_KINDS = ("category", "object")
@@ -23,9 +24,10 @@ class CategoricalEncoder(DataEncoder):
         mapping: dict[str, np.ndarray] = {}
 
         for column in data.columns:
-            if self._is_categorical(data[column]):
+            column_data = data[column].to_numpy()
+            if self._is_categorical(data[column]) or is_discrete(column_data):
                 categories = np.sort(data[column].unique())
-                codes = np.searchsorted(categories, data[column].to_numpy())
+                codes = np.searchsorted(categories, column_data)
 
                 encoded[column] = codes
                 mapping[column] = categories

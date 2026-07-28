@@ -11,6 +11,8 @@ def is_discrete(arr: np.ndarray) -> bool:
         msg = "Array must contain numeric values only."
         raise TypeError(msg)
 
-    # Ignore NaNs, compare integer-casted values to originals
+    # Ignore NaNs, then compare finite values to their rounded forms.
     arr_no_nan = arr[~np.isnan(arr)]
-    return np.allclose(arr_no_nan, np.round(arr_no_nan))
+    if not np.isfinite(arr_no_nan).all():
+        return False
+    return bool(np.equal(arr_no_nan, np.round(arr_no_nan)).all())

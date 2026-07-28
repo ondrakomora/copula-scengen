@@ -10,10 +10,18 @@ class ExtendedCopulaSampleTransformer(CopulaSampleTransformationStrategy):
     """Transform copula ranks while preserving discrete-margin extensions."""
 
     def _extended_inverse_ecdf(self, cumulative: np.ndarray, args: np.ndarray) -> np.ndarray:
-        indices = np.searchsorted(cumulative, args, side="left")
+        bounded_args = np.clip(args, 0.0, cumulative[-1])
+        indices = np.searchsorted(cumulative, bounded_args, side="left")
+        indices = np.clip(indices, 0, len(cumulative) - 1)
         previous_cumulative = np.where(indices == 0, 0.0, cumulative[indices - 1])
         masses = cumulative[indices] - previous_cumulative
-        return indices - 1 + (args - previous_cumulative) / masses
+        fractions = np.divide(
+            bounded_args - previous_cumulative,
+            masses,
+            out=np.zeros_like(bounded_args, dtype=float),
+            where=masses > 0,
+        )
+        return indices - 1 + fractions
 
     def _discrete_transformations(self, margin_data: np.ndarray, n_scenarios: int) -> np.ndarray:
         value_counts, cumulative = _shared.discrete_distribution(margin_data)

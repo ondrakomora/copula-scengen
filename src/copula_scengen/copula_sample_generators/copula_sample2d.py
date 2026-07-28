@@ -15,8 +15,11 @@ class CopulaSample2D:
 
     def __call__(self, arg: np.ndarray) -> float | np.ndarray:
         """Return empirical copula values at the supplied ranks."""
-        arr = np.asarray(arg) - 1
-        return self._cache[arr]
+        ranks = np.asarray(arg)
+        result = np.zeros(ranks.shape, dtype=float)
+        positive = ranks > 0
+        result[positive] = self._cache[ranks[positive] - 1]
+        return float(result) if result.ndim == 0 else result
 
     def assign(self, rank: int) -> None:
         """Incorporate one assigned rank into the empirical copula values."""

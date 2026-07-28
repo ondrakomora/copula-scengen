@@ -19,7 +19,13 @@ def continuous_transformations(margin_data: np.ndarray, n_scenarios: int) -> np.
 
 
 def discrete_distribution(margin_data: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    value_counts = np.bincount(margin_data.astype(int))
+    integer_data = margin_data.astype(int)
+    support = np.unique(integer_data)
+    if support.size == 0 or not np.array_equal(support, np.arange(support.size)):
+        msg = "Discrete margins must contain contiguous integer values starting at zero"
+        raise ValueError(msg)
+
+    value_counts = np.bincount(integer_data)
     cumulative = np.cumsum(value_counts) / len(margin_data)
     return value_counts, cumulative
 

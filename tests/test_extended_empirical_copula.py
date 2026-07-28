@@ -30,10 +30,8 @@ def test_all_discrete_two_points_uniform() -> None:
     data = np.array([[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]])
     eec = ExtendedEmpiricalCopula(data=data)
 
-    # At an exact jump point, C* must equal the inner empirical copula (lambda = 0 both sides).
-    inner = EmpiricalCopula(data=data)
     queries = np.array([[0.5, 0.5], [1.0, 1.0], [0.0, 0.0]])
-    assert np.allclose(eec(queries), inner(queries), atol=1e-12)
+    assert np.allclose(eec(queries), np.array([0.25, 1.0, 0.0]), atol=1e-12)
 
 
 def test_discrete_margin_interpolates_between_steps() -> None:
@@ -53,11 +51,64 @@ def test_mixed_margins() -> None:
     data = np.array([[0.0, 10.0], [0.0, 2.0], [1.0, 7.0], [1.0, 4.0]])
     eec = ExtendedEmpiricalCopula(data=data)
     out = eec(np.array([[0.75, 0.5], [0.0, 1.0], [1.0, 1.0]]))
-    assert out.shape == (3,)
-    assert np.all((out >= 0.0) & (out <= 1.0))
+    assert np.allclose(out, np.array([0.375, 0.0, 1.0]), atol=1e-12)
 
 
 def test_call_single_point_1d_broadcast(eec: ExtendedEmpiricalCopula) -> None:
     out = eec(np.array([1.0, 1.0]))
     assert out.shape == (1,)
     assert np.isclose(out[0], 1.0)
+
+
+def test_discrete_extension_matches_empirical_joint_cdf_at_jump_points() -> None:
+    data = np.array([[0.0, 0.0], [0.0, 0.0], [1.0, 1.0], [1.0, 1.0]])
+
+    result = ExtendedEmpiricalCopula(data)(np.array([[0.5, 0.5]]))
+
+    assert result == pytest.approx([0.5])
+
+
+def test_discrete_extension_preserves_negative_dependence_at_jump_points() -> None:
+    data = np.array([[0.0, 1.0], [0.0, 1.0], [1.0, 0.0], [1.0, 0.0]])
+    queries = np.array([[0.5, 0.5], [0.5, 1.0], [1.0, 0.5], [1.0, 1.0]])
+
+    result = ExtendedEmpiricalCopula(data)(queries)
+
+    np.testing.assert_array_equal(result, np.array([0.0, 0.5, 0.5, 1.0]))
+
+
+def test_discrete_extension_handles_unbalanced_jump_masses() -> None:
+    data = np.array([[0.0, 0.0], [0.0, 1.0], [0.0, 1.0], [1.0, 1.0]])
+    queries = np.array([[0.75, 0.25], [0.75, 1.0], [1.0, 0.25], [1.0, 1.0]])
+
+    result = ExtendedEmpiricalCopula(data)(queries)
+
+    np.testing.assert_array_equal(result, np.array([0.25, 0.75, 0.25, 1.0]))
+
+
+@pytest.mark.parametrize(
+    ("query", "expected"),
+    [
+        ([0.5, 0.5], 0.25),
+        ([0.75, 0.5], 0.375),
+        ([1.0, 0.5], 0.5),
+        ([0.75, 0.75], 0.5625),
+    ],
+)
+def test_discrete_extension_interpolates_between_multiple_jump_points(query: list[float], expected: float) -> None:
+    data = np.array([[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]])
+
+    result = ExtendedEmpiricalCopula(data)(np.array([query]))
+
+    assert result == pytest.approx([expected])
+
+
+def test_discrete_extension_is_invariant_to_row_order() -> None:
+    data = np.array([[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]])
+    reordered = data[[1, 0, 3, 2]]
+    query = np.array([[0.5, 0.5]])
+
+    result = ExtendedEmpiricalCopula(data)(query)
+    reordered_result = ExtendedEmpiricalCopula(reordered)(query)
+
+    np.testing.assert_array_equal(result, reordered_result)

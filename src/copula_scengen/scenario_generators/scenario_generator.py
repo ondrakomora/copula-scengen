@@ -56,6 +56,12 @@ class ScenarioGenerator(BaseScenarioGenerator):
         if not isinstance(n_scenarios, int):
             msg = "n_scenarios must be an int"
             raise TypeError(msg)
+        if n_scenarios <= 0:
+            msg = "n_scenarios must be positive"
+            raise ValueError(msg)
+        if data.shape[0] == 0 or data.shape[1] == 0:
+            msg = "data must contain at least one row and one column"
+            raise ValueError(msg)
 
         encoded_data, category_mapping = self._data_encoder.encode(data)
 
